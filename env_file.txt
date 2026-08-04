@@ -1,0 +1,14 @@
+FOUNDRY_PROJECT_ENDPOINT="https://prakashfoundry111.services.ai.azure.com/api/projects/prakash-proj-111"
+MODEL_DEPLOYMENT_NAME="gpt-5"
+MCP_SERVER_NAME="Microsoft Learn MCP server"
+
+FOUNDRY_AGENT_ENDPOINT="https://prakashfoundry111.services.ai.azure.com/api/projects/prakash-proj-111/agents/Prakash-aiAgent11/endpoint/protocols/openai/responses"
+
+FOUNDRY_API_KEY="1UZijsggpvbmsu33XaSDjZzINc3n9It76nxKLI7DHGCj2NP6d6z1JQQJ99CGACYeBjFXJ3w3AAAAACOGlAdp"
+
+
+
+AZURE_TENANT_ID=b39cef59-7810-40cb-96ce-66cdebe165a4
+
+
+
