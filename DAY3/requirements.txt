@@ -1,0 +1,6 @@
+azure-ai-projects>=2.0.0
+azure-identity
+python-dotenv
+streamlit
+pypdf
+python-docx
