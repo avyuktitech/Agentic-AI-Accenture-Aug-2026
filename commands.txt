@@ -9,3 +9,6 @@ python -c "from agent_framework import ChatAgent; print(ChatAgent)"
 If that succeeds, run your program again:
 
 python .\sequential-workflow-devui.py
+
+
+python -m pip install --upgrade azure-identity python-dotenv
