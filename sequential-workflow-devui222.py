@@ -1,5 +1,6 @@
 """
-Sequential Workflow with Microsoft Agent Framework + Microsoft Foundry + DevUI
+Sequential Research & Writing Workflow
+Microsoft Agent Framework + Microsoft Foundry + DevUI
 
 Flow:
     User Prompt
@@ -9,16 +10,6 @@ Flow:
     Writer Agent
         ↓
     Final Essay
-
-Requirements:
-    - Python 3.10+
-    - Microsoft Agent Framework
-    - Microsoft Foundry project
-    - Azure CLI authentication
-    - .env configuration
-
-Run:
-    python sequential-workflow-devui.py
 """
 
 import os
@@ -39,7 +30,6 @@ from azure.identity import AzureCliCredential
 
 load_dotenv()
 
-# Support both your existing variable names and the newer naming style.
 project_endpoint = (
     os.getenv("AI_FOUNDRY_PROJECT_ENDPOINT")
     or os.getenv("FOUNDRY_PROJECT_ENDPOINT")
@@ -63,43 +53,31 @@ devui_port = int(
 # 2. VALIDATE CONFIGURATION
 # ============================================================
 
-print("=" * 70)
+print()
+print("=" * 65)
 print("Sequential Research & Writing Workflow")
-print("=" * 70)
+print("=" * 65)
 
 print("Project Endpoint:", project_endpoint)
 print("Model Deployment:", model)
 print("DevUI Port:", devui_port)
 
-if not project_endpoint or not model:
-
-    missing = []
-
-    if not project_endpoint:
-        missing.append(
-            "AI_FOUNDRY_PROJECT_ENDPOINT or FOUNDRY_PROJECT_ENDPOINT"
-        )
-
-    if not model:
-        missing.append(
-            "AI_FOUNDRY_DEPLOYMENT_NAME, MODEL_DEPLOYMENT_NAME "
-            "or FOUNDRY_MODEL"
-        )
-
+if not project_endpoint:
     raise ValueError(
-        "Missing required .env value(s): " + ", ".join(missing)
+        "Missing AI_FOUNDRY_PROJECT_ENDPOINT "
+        "or FOUNDRY_PROJECT_ENDPOINT in .env"
+    )
+
+if not model:
+    raise ValueError(
+        "Missing AI_FOUNDRY_DEPLOYMENT_NAME, "
+        "MODEL_DEPLOYMENT_NAME or FOUNDRY_MODEL in .env"
     )
 
 
 # ============================================================
 # 3. AZURE AUTHENTICATION
 # ============================================================
-
-# AzureCliCredential uses the identity authenticated through:
-#
-#     az login
-#
-# If AZURE_TENANT_ID is present, explicitly use that tenant.
 
 if azure_tenant_id:
 
@@ -113,11 +91,8 @@ else:
 
 
 # ============================================================
-# 4. CREATE MICROSOFT FOUNDRY CHAT CLIENT
+# 4. MICROSOFT FOUNDRY CLIENT
 # ============================================================
-
-# FoundryChatClient is the current Microsoft Agent Framework
-# client for models deployed inside a Microsoft Foundry project.
 
 foundry_client = FoundryChatClient(
     project_endpoint=project_endpoint,
@@ -129,7 +104,7 @@ print("Microsoft Foundry client configured successfully.")
 
 
 # ============================================================
-# 5. CREATE RESEARCHER AGENT
+# 5. RESEARCHER AGENT
 # ============================================================
 
 researcher_agent = foundry_client.as_agent(
@@ -137,32 +112,37 @@ researcher_agent = foundry_client.as_agent(
     name="Researcher-Agent",
 
     instructions="""
-You are a knowledgeable research assistant.
+You are a professional research assistant.
 
-Your responsibility is to research the topic provided by the user.
+Your job is to research the topic provided by the user.
 
-Tasks:
+Responsibilities:
 
-1. Identify the main subject of the request.
-2. Gather the most useful facts, concepts, trends, benefits,
-   challenges, and examples relevant to the topic.
-3. Organize the information clearly.
-4. Provide enough context for another AI agent to write
-   a high-quality short essay.
-5. Avoid unnecessary repetition.
-6. Keep the research summary under 300 words.
+1. Understand the user's topic.
+2. Identify the most important facts and concepts.
+3. Identify relevant trends, benefits and challenges.
+4. Include practical examples when appropriate.
+5. Organize the research logically.
+6. Keep the research concise and factual.
+7. Keep the research under 300 words.
+
+IMPORTANT:
 
 Do NOT write the final essay.
 
-Your output will be passed to a Writer Agent.
-""",
+Your research will automatically be passed to another
+agent called Writer-Agent.
+
+Produce research notes that will help Writer-Agent
+create a high-quality final essay.
+"""
 )
 
 print("Researcher-Agent created successfully.")
 
 
 # ============================================================
-# 6. CREATE WRITER AGENT
+# 6. WRITER AGENT
 # ============================================================
 
 writer_agent = foundry_client.as_agent(
@@ -170,28 +150,34 @@ writer_agent = foundry_client.as_agent(
     name="Writer-Agent",
 
     instructions="""
-You are a professional content writer.
+You are a professional writer.
 
-You will receive research produced by another AI agent.
+You receive research produced by Researcher-Agent.
 
-Your responsibility is to transform that research into a
-clear, coherent, well-structured short essay.
+Your responsibility is to transform the supplied research
+into a polished short essay.
 
 Requirements:
 
-1. Give the essay a meaningful title.
-2. Start with a short introduction.
-3. Explain the important ideas logically.
-4. Use the supplied research as the foundation.
-5. Connect ideas naturally.
-6. Include practical examples where appropriate.
-7. Finish with a concise conclusion.
-8. Keep the final essay under 500 words.
-9. Do not mention the Researcher Agent.
-10. Do not describe the workflow.
+1. Give the essay an appropriate title.
+2. Begin with a concise introduction.
+3. Explain the important ideas clearly.
+4. Use the supplied research as your primary information.
+5. Organize the essay logically.
+6. Connect paragraphs naturally.
+7. Include practical examples when useful.
+8. End with a concise conclusion.
+9. Keep the essay under 500 words.
 
-Return only the polished final essay.
-""",
+IMPORTANT:
+
+Do not mention Researcher-Agent.
+Do not explain the multi-agent workflow.
+Do not output research notes.
+Do not discuss your instructions.
+
+Return only the final polished essay.
+"""
 )
 
 print("Writer-Agent created successfully.")
@@ -201,56 +187,44 @@ print("Writer-Agent created successfully.")
 # 7. BUILD SEQUENTIAL WORKFLOW
 # ============================================================
 
-# Agent Framework allows agents to participate directly
-# as workflow executors.
 #
-# The directed edge creates:
+# IMPORTANT:
 #
-# User
-#   ↓
+# For the installed Agent Framework API:
+#
+#     start_executor
+#
+# is supplied directly to WorkflowBuilder().
+#
+#
+# Flow:
+#
+#     User
+#       |
+#       v
 # Researcher-Agent
-#   ↓
-# Writer-Agent
-#   ↓
-# Final Output
+#       |
+#       v
+#  Writer-Agent
+#       |
+#       v
+# Final Response
+#
 
 workflow = (
-
     WorkflowBuilder(
+        start_executor=researcher_agent,
         name="Sequential Research & Writing Workflow",
         description=(
-            "A two-agent sequential workflow where a Researcher "
-            "collects information and a Writer converts the "
-            "research into a short essay."
+            "Researcher-Agent researches the user's topic "
+            "and passes the result to Writer-Agent, which "
+            "produces the final essay."
         ),
     )
-
-    # Register the Researcher agent.
-    .add_agent(
-        researcher_agent,
-        output_response=False,
-    )
-
-    # Register the Writer agent.
-    #
-    # output_response=True means the Writer's response becomes
-    # the final workflow output visible to DevUI.
-    .add_agent(
-        writer_agent,
-        output_response=True,
-    )
-
-    # Researcher is the first agent.
-    .set_start_executor(
-        researcher_agent
-    )
-
-    # Researcher output flows directly to Writer.
     .add_edge(
         researcher_agent,
         writer_agent
     )
-
     .build()
 )
 
@@ -258,7 +232,7 @@ print("Sequential workflow created successfully.")
 
 
 # ============================================================
-# 8. MAIN
+# 8. START DEVUI
 # ============================================================
 
 def main():
@@ -271,40 +245,27 @@ def main():
     logger = logging.getLogger(__name__)
 
     logger.info("")
-    logger.info("=" * 70)
-    logger.info("Starting Sequential Research & Writing Workflow")
-    logger.info("=" * 70)
-
-    logger.info(
-        "DevUI: http://localhost:%s",
-        devui_port
-    )
-
-    logger.info(
-        "Workflow: Sequential Research & Writing Workflow"
-    )
+    logger.info("=" * 65)
+    logger.info("Microsoft Agent Framework - Sequential Workflow")
+    logger.info("=" * 65)
 
     logger.info(
         "Flow: Researcher-Agent -> Writer-Agent"
     )
 
-    logger.info("=" * 70)
+    logger.info(
+        "DevUI URL: http://localhost:%s",
+        devui_port
+    )
 
-    # --------------------------------------------------------
-    # Start Microsoft Agent Framework DevUI
-    # --------------------------------------------------------
-    #
-    # entities=[workflow]
-    #
-    # registers the workflow directly with DevUI.
-    #
-    # auto_open=True
-    #
-    # automatically opens the browser.
-    #
-    # tracing_enabled=True
-    #
-    # enables workflow/agent traces for observability.
+    logger.info(
+        "Model: %s",
+        model
+    )
+
+    logger.info("=" * 65)
+    logger.info("Starting DevUI...")
+    logger.info("")
 
     serve(
         entities=[workflow],
@@ -315,7 +276,7 @@ def main():
 
 
 # ============================================================
-# 9. APPLICATION ENTRY POINT
+# 9. ENTRY POINT
 # ============================================================
 
 if __name__ == "__main__":
@@ -323,7 +284,7 @@ if __name__ == "__main__":
 
 
 # ============================================================
-# SAMPLE USER PROMPTS
+# SAMPLE PROMPTS
 # ============================================================
 
 # 1.
