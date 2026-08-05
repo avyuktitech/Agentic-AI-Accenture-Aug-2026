@@ -1,0 +1,11 @@
+Run these commands one by one:
+
+python -m pip install --upgrade agent-framework agent-framework-core
+
+Then:
+
+python -c "from agent_framework import ChatAgent; print(ChatAgent)"
+
+If that succeeds, run your program again:
+
+python .\sequential-workflow-devui.py
