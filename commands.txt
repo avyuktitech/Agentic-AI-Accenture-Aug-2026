@@ -12,3 +12,12 @@ python .\sequential-workflow-devui.py
 
 
 python -m pip install --upgrade azure-identity python-dotenv
+
+
+Then test the important import:
+
+python -c "from agent_framework.foundry import FoundryChatClient; print('FoundryChatClient OK')"
+
+And:
+
+python -c "from agent_framework import WorkflowBuilder; print('WorkflowBuilder OK')"
