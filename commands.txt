@@ -28,3 +28,15 @@ python .\sequential-workflow-devui.py
 
 
 pip install langgraph langchain-openai python-dotenv
+
+
+python -c "
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+import os
+from dotenv import load_dotenv
+load_dotenv()
+client = AIProjectClient(endpoint=os.environ['FOUNDRY_PROJECT_ENDPOINT'], credential=DefaultAzureCredential())
+for agent in client.agents.list():
+    print(agent.name)
+"
