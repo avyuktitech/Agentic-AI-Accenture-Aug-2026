@@ -22,7 +22,7 @@ from agent_framework import (
     WorkflowViz,
 )
 from agent_framework import Agent
-from agent_framework.azure import AzureAIClient
+from agent_framework.foundry import FoundryChatClient
 from azure.ai.projects.aio import AIProjectClient
 from azure.identity.aio import AzureCliCredential
 from agent_framework.devui import serve
@@ -80,20 +80,16 @@ async def create_agent(agent_name: str, agent_instructions: str) -> Agent:
         endpoint=project_endpoint,
         credential=credential
     )
-    # A conversation preserves the messages belonging to this agent.
-    openai_client = project_client.get_openai_client()
-    conversation = await openai_client.conversations.create()
-    conversation_id = conversation.id
-    print("Conversation ID:", conversation_id)
 
-    # Bind the selected model deployment to the new conversation.
-    chat_client = AzureAIClient(
+    # FoundryChatClient wraps the project client + model deployment.
+    # Conversation/history is service-managed, so no manual conversation
+    # creation is needed here.
+    chat_client = FoundryChatClient(
         project_client=project_client,
-        conversation_id=conversation_id,
-        model_deployment_name=model
+        model=model,
     )
 
-    agent = chat_client.create_agent(
+    agent = chat_client.as_agent(
         name=agent_name,
         instructions=agent_instructions,
     )
