@@ -25,3 +25,6 @@ python -c "from agent_framework import WorkflowBuilder; print('WorkflowBuilder O
 
 Clear-Host
 python .\sequential-workflow-devui.py
+
+
+pip install langgraph langchain-openai python-dotenv
