@@ -21,3 +21,7 @@ python -c "from agent_framework.foundry import FoundryChatClient; print('Foundry
 And:
 
 python -c "from agent_framework import WorkflowBuilder; print('WorkflowBuilder OK')"
+
+
+Clear-Host
+python .\sequential-workflow-devui.py
