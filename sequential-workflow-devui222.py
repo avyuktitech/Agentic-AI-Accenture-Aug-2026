@@ -174,7 +174,7 @@ def main():
     workflow = asyncio.run(build_workflow())
     # DevUI exposes the workflow in a browser; tracing makes each stage
     # observable for debugging and learning.
-    serve(entities=[workflow], port=devui_port, auto_open=True, tracing_enabled=True)
+    serve(entities=[workflow], port=devui_port, auto_open=True, instrumentation_enabled=True)
 
 if __name__ == "__main__":
     # Prevent server startup when this module is imported elsewhere.
