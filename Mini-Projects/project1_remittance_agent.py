@@ -1,10 +1,11 @@
 import os
+import json
 from typing import TypedDict
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 from langgraph.graph import StateGraph, START, END
-from langchain_openai import AzureChatOpenAI
+from langchain_openai import ChatOpenAI
 
 
 load_dotenv()
@@ -13,15 +14,17 @@ load_dotenv()
 # ------------------------------------------------------------
 # LLM
 # ------------------------------------------------------------
-
-llm = AzureChatOpenAI(
-    azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+# NOTE: gpt-oss-120b is only reachable through Foundry's unified
+# /openai/v1 endpoint, not the classic Azure deployment-based route
+# (that's what AzureChatOpenAI builds, and it 404s for this model).
+# ChatOpenAI with base_url + model targets the unified route instead.
+#
+# AZURE_OPENAI_ENDPOINT should look like:
+#   https://<resource>.openai.azure.com/openai/v1
+llm = ChatOpenAI(
+    base_url=os.environ["AZURE_OPENAI_ENDPOINT"],
     api_key=os.environ["AZURE_OPENAI_API_KEY"],
-    azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT"],
-    api_version=os.getenv(
-        "AZURE_OPENAI_API_VERSION",
-        "2025-04-01-preview"
-    ),
+    model=os.environ["AZURE_OPENAI_DEPLOYMENT"],
 )
 
 
@@ -37,7 +40,13 @@ class Remittance(BaseModel):
     payment_reference: str
 
 
-extractor = llm.with_structured_output(Remittance)
+# NOTE: method="function_calling" (the default) relies on strict
+# tool-calling schemas that gpt-oss-120b does not support (same
+# root cause as the earlier ReAct agent 400 errors). method="json_mode"
+# uses plain JSON-object output instead, which is far more broadly
+# supported. json_mode does NOT auto-inject the schema into the
+# prompt, so the schema is spelled out explicitly in extract() below.
+extractor = llm.with_structured_output(Remittance, method="json_mode")
 
 
 # ------------------------------------------------------------
@@ -71,14 +80,19 @@ def extract(state: State):
 
     print("\n[REMITTANCE EXTRACTION AGENT]")
 
+    schema_hint = json.dumps(Remittance.model_json_schema(), indent=2)
+
     result = extractor.invoke(
         f"""
-        Extract remittance information from the following document.
+        Extract remittance information from the following document and
+        respond with a single JSON object that matches this schema exactly:
+
+        {schema_hint}
 
         Document:
         {state['raw_text']}
 
-        Do not invent values.
+        Do not invent values. Respond with JSON only, no extra text.
         """
     )
 
