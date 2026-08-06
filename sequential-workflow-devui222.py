@@ -51,7 +51,7 @@ async def run_agent_with_retry(agent: Agent, message, *, max_tokens: int = 800):
     max_attempts = int(os.getenv("AGENT_RETRY_ATTEMPTS", "5"))
     for attempt in range(max_attempts):
         try:
-            return await agent.run(message, max_tokens=max_tokens)
+            return await agent.run(message, options={"max_tokens": max_tokens})
         except Exception as exc:
             error_text = str(exc).lower()
             is_rate_limit = (
