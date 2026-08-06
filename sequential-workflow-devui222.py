@@ -147,9 +147,9 @@ async def build_workflow():
     workflow = (
         WorkflowBuilder(
             name="Sequential Research & Writing Workflow",
-            description="A two-step workflow: research a topic, then write an essay."
+            description="A two-step workflow: research a topic, then write an essay.",
+            start_executor=researcher_executor,
         )
-        .set_start_executor(researcher_executor)
         .add_edge(researcher_executor, writer_executor)
         .build()
     )
